@@ -1,0 +1,187 @@
+1.Fetching of data from records using Dnyamic method using RPGLE and displaying the output in DSPF file
+   by PREPARE and DECLARE.
+
+ SEU==>                                                                 DYNSQLR
+ FMT H  HKeywords++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        *************** Beginning of data *************************************
+0000.01 HDFTACTGRP(*NO)                                                        
+0001.00 FDYNSQLD   CF   E             WORKSTN SFILE(DYNSFL:SRRN)               
+0002.00 DSTMT             S            100A   INZ('SELECT * FROM TEN30LIB/')   
+0003.00 DSRRN             S              3P 0 INZ(*ZEROS)                      
+0005.00 DLOADSFL          PR                                                   
+0006.00 D                              100A                                    
+0006.01 C                   EVAL      STMT=%TRIM(STMT)+'EMPMAIN WHERE '        
+0006.02 C                   EVAL      *IN82=*ON                                
+0006.03 C                   DOW       NOT *IN03                                
+0006.04 C                   WRITE     FOOTER                                   
+0006.05 C                   EXFMT     DYNCTL                                   
+0006.06 C   03              LEAVE                                              
+0006.07 C                   EVAL      STMT=%TRIM(STMT)+' '+FLD+OPR+VAL         
+0006.09 C                   IF        KEY<>*BLANK                              
+0006.10 C                   EVAL      STMT=%TRIM(STMT) +' ORDER BY '+          
+0006.11 C                             %TRIM(KEY)       
+0006.12 C                   ENDIF                    
+0007.00 C                   CALLP     LOADSFL(STMT)  
+0008.00 C                   ENDDO                    
+0009.00 C                   EVAL      *INLR=*ON      
+0010.00 PLOADSFL          B                          
+0011.00 DLOADSFL          PI                         
+0012.00 DSTR                           100A          
+0013.00 C                   EVAL      *IN83=*ON      
+0014.00 C                   WRITE     DYNCTL              
+0015.00 C                   EVAL      *IN83=*OFF 
+0015.01 C                   EVAL      SRRN=0     
+0016.00 C/EXEC SQL                               
+0017.00 C+ PREPARE S1 FROM :STR                  
+0018.00 C/END-EXEC                     
+0017.00 C+ PREPARE S1 FROM :STR                                             
+0018.00 C/END-EXEC                                                          
+0019.00 C/EXEC SQL                                                          
+0020.00 C+ DECLARE DYNCUR CURSOR FOR S1                                     
+0021.00 C/END-EXEC                                                          
+0022.00 C/EXEC SQL                                                          
+0023.00 C+ OPEN DYNCUR                                                      
+0024.00 C/END-EXEC                                                          
+0025.00 C                   DOW       SQLCODE=0                             
+0026.00 C/EXEC SQL                                                          
+0027.00 C+ FETCH NEXT FROM DYNCUR INTO :EMPID, :NAME, :DEPT, :GENDER, :DOJ, 
+0028.00 C+ :SALARY                                  
+0029.00 C/END-EXEC                                  
+0030.00 C                   IF        SQLCODE=100   
+0031.00 C                   LEAVE                   
+0032.00 C                   ENDIF                   
+0033.00 C                   EVAL      SRRN+=1       
+0034.00 C                   WRITE     DYNSFL        
+0034.01 C                   ENDDO                   
+0035.00 C                   IF        SRRN>0        
+0036.00 C                   EVAL      *IN81=*ON                               
+0037.00 C                   ELSE                                              
+0038.00 C                   EVAL      *IN81=*OFF                              
+0039.00 C                   EVAL      MSG='NO RECORDS FETCHED FOR THIS QUERY' 
+0040.00 C                   ENDIF                                             
+0040.01 C/EXEC SQL                                                            
+0040.02 C+ CLOSE DYNCUR                                                       
+0040.03 C/END-EXEC                                                            
+0041.00 C                   RETURN                                            
+0042.00 PLOADSFL          E                                                    
+        ****************** End of data ****************************************
+
+2.For fetching the details of the record by implementing 2 cursor in the field and declaring temporary field
+for fetching the data using SQLRPGLE.
+
+ SEU==>                                                                SQLINS1R 
+ FMT FX FFilename++IPEASF.....L.....A.Device+.Keywords+++++++++++++++++++++++++ 
+        *************** Beginning of data ************************************* 
+0001.00 FSQLINSD   CF   E             WORKSTN                                   
+0002.00 DSQLSTMT          S            200A                                     
+0002.01 C                   EVAL      SQLSTMT='INSERT INTO TEN30LIB/SBANKTRAN ' 
+0002.02 C                             ' VALUES(?,?,?,?,?,?)'                    
+0002.03 C/EXEC SQL                                                              
+0002.04 C+ PREPARE S1 FROM :SQLSTMT                                             
+0002.05 C/END-EXEC                                                              
+0003.00 C                   DOW       NOT *IN03                                 
+0004.00 C                   EXFMT     ENTSCR                                    
+0005.00 C   03              LEAVE                                               
+0006.00 C                   IF        *IN04                                     
+0007.00 C/EXEC SQL                                                              
+0008.00 C+ EXECUTE S1 USING                                                     
+0009.00 C+ :TACNO,:SLIPNO,:DTTRAN,:TRNTYPE,:TRNMODE,:TRNAMT                     
+0010.00 C/END-EXEC                                                              
+0011.00 C                   CLEAR                   ENTSCR                      
+0011.02 C     SQLCODE       DSPLY                                    
+0011.03 C                   SELECT                                   
+0011.04 C                   WHEN      SQLCODE=-530                   
+0011.05 C                   EVAL      MSG='NO SUCH A/C NO IN MASTER' 
+0011.06 C                   WHEN      SQLCODE=-545                   
+0011.07 C                   EVAL      MSG='INVALID COLUMN VALUE'     
+0011.08 C                   ENDSL                                    
+0012.00 C                   ENDIF                                    
+0013.00 C                   IF        *IN12                          
+0014.00 C                   CLEAR                   ENTSCR                     
+0015.00 C                   ENDIF                                              
+0016.00 C                   ENDDO                                              
+0017.00 C                   EVAL      *INLR=*ON                                
+        ****************** End of data ****************************************
+
+
+3. DETAIL AND GROUP REPORT USING 2 CURSORS 
+
+ FMT F  FFilename++IPEASFRlen+LKlen+AIDevice+.Keywords+++++++++++++++++++++++++
+        *************** Beginning of data *************************************
+0002.00 FDEPTSALR  O    E             PRINTER OFLIND(*IN95)                    
+0003.00 C/EXEC SQL                                                             
+0007.00 C+ DECLARE ALLRECS CURSOR FOR SELECT EMPID,NAME,DEPT,SALARY FROM       
+0007.01 C+ EMPLOYEE9 ORDER BY DEPT                                             
+0008.00 C/END-EXEC                                                             
+0009.00 C/EXEC SQL                                                             
+0010.00 C+ DECLARE GROUPS CURSOR FOR SELECT DEPT, SUM(SALARY), MAX(SALARY)     
+0011.00 C+ FROM TEN30LIB/EMPLOYEE9                                             
+0011.01 C+ GROUP BY DEPT                                                       
+0012.00 C/END-EXEC                                                             
+0013.00 C/EXEC SQL                                                             
+0014.00 C+ OPEN ALLRECS                                                        
+0015.00 C/END-EXEC                                                             
+0016.00 C/EXEC SQL                                                             
+0017.00 C+ OPEN GROUPS                                                         
+0018.00 C/END-EXEC                                                             
+0020.00 C                   WRITE     HEAD1                               
+0021.00 C                   WRITE     HEAD2                               
+0021.02 C/EXEC SQL                                                        
+0021.03 C+ FETCH NEXT FROM ALLRECS INTO :EMPID, :NAME, :DEPT,:SALARY      
+0021.04 C/END-EXEC                                                        
+0021.05 C     SQLCODE       DSPLY                                         
+0021.06 C                   EVAL      TMPDEPT=DEPT                        
+0022.00 C                   DOW       SQLCODE=0                           
+0023.04 C                   IF        SQLCODE=100                         
+0023.05 C                   LEAVE                                        
+0023.06 C                   ENDIF                                        
+0026.00 C                   WRITE     DETAIL                             
+0027.00 C   95              WRITE     HEAD1                              
+0028.00 C   95              WRITE     HEAD2                              
+0029.00 C   95              EVAL      *IN95=*OFF                         
+0029.01 C/EXEC SQL                                                       
+0029.02 C+ FETCH NEXT FROM ALLRECS INTO :EMPID, :NAME, :DEPT, :SALARY    
+0029.04 C/END-EXEC                                                                                                                                 
+0033.00 C                   IF        DEPT<>TMPDEPT                 
+0034.00 C/EXEC SQL                                                  
+0035.00 C+ FETCH NEXT FROM GROUPS INTO :TMPDEPT, :DEPTSAL, :DEPTMAX 
+0036.00 C/END-EXEC                                                  
+0037.00 C                   WRITE     SUM1                          
+0038.00 C                   WRITE     SUM2                          
+0039.00 C                   WRITE     SUM3                          
+0040.00 C                   EVAL      TOTSAL+=DEPTSAL               
+0041.00 C                   EVAL      TOTMAX+=DEPTMAX  
+0042.00 C                   EVAL      TMPDEPT=DEPT      
+0043.00 C                   ENDIF                       
+0044.00 C                   ENDDO                       
+0045.00 C                   WRITE     GRD1              
+0046.00 C                   WRITE     GRD2              
+0046.01 C/EXEC SQL                                      
+0046.02 C+ CLOSE ALLRECS                                
+0046.03 C/END-EXEC                                      
+0046.04 C/EXEC SQL                                      
+0046.05 C+ CLOSE GROUPS                                                         
+0046.06 C/END-EXEC                                                              
+0047.00 C                   EVAL      *INLR=*ON                                 
+        ****************** End of data ****************************************              
+
+4.UNION of two table and displaying the data insde the table using command and Prompt.
+INV22 AND INV23 are two PF files
+
+SELECT INVNO,CUSTID,INVAMT,INVSTS FROM INV22 UNION SELECT INVNO,CUSTID,INVAMT,INVSTS FROM INV23                    
+ 
+                                                                    
+   INVNO   CUSTID      INVAMT   INVSTS
+     234   9223     23,400.00     P   
+     112   4325    300,000.00     P   
+     136   45321   400,000.00     U   
+   2,678   23456   500,000.00     P   
+   2,146   30900   607,000.00     U   
+  45,789   45677   321,000.00     P   
+   5,487   30098    80,000.00     P   
+   2,378   3300     45,000.00     P   
+   4,567   32100   467,000.00     U   
+   4,432   34000   346,990.00     U   
+   4,532   67890   100,090.00     P   
+   4,009   34560    30,000.00     P   
+                                  
